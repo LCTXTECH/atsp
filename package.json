@@ -1,0 +1,55 @@
+{
+  "name": "@agentsentry/atsp",
+  "version": "1.0.0",
+  "description": "Agentic Transaction Security Protocol — open standard for AI agent on-chain governance",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "SPEC.md",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "solana",
+    "elizaos",
+    "ai-agents",
+    "defi-security",
+    "circuit-breaker",
+    "agentic-capital",
+    "squads-multisig",
+    "nhi",
+    "web3-security",
+    "atsp"
+  ],
+  "author": "AgentSentry  (https://agentsentry.net)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LCTXTECH/atsp.git"
+  },
+  "homepage": "https://agentsentry.net/protocol/atsp",
+  "bugs": {
+    "url": "https://github.com/LCTXTECH/atsp/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
