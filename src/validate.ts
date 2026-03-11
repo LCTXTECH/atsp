@@ -217,17 +217,16 @@ export function riskLevel(score: number): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 /**
  * Cross-environment SHA-256.
  * Works in Node.js, browser, Vercel Edge, Cloudflare Workers.
- async function sha256(message: string): Promise {
- */
-async function sha256(message: string): Promise {
+async function sha256(message: string): Promise<string> {
   const encoded = new TextEncoder().encode(message)
   if (
     typeof globalThis !== 'undefined' &&
-    globalThis.crypto?.subtle
+    globalThis.crypto &&
+    globalThis.crypto.subtle
   ) {
     const buf = await globalThis.crypto.subtle.digest('SHA-256', encoded)
     return Array.from(new Uint8Array(buf))
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b) => b.toString(16).padStart(2, '0'))
       .join('')
   }
   const { createHash } = await import('crypto')
