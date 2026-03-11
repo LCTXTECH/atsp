@@ -26,6 +26,14 @@ ATSP (Agentic Transaction Security Protocol) defines a standard interface that a
 
 ## Quick Install
 
+> **Pre-release:** npm package publishes with v1.0.0 GA.
+> Install directly from GitHub until then:
+
+```bash
+npm install github:LCTXTECH/atsp
+```
+
+Once published (coming soon):
 ```bash
 npm install @agentsentry/atsp
 # or
@@ -111,7 +119,7 @@ Add this to your project's README to signal ATSP compliance:
 ```markdown
 [![ATSP v1.0 Compliant](https://img.shields.io/badge/ATSP-v1.0%20Compliant-00FF88?style=flat-square&labelColor=010408)](https://agentsentry.net/protocol/atsp)
 ```
-
+[![CI](https://github.com/LCTXTECH/atsp/actions/workflows/ci.yml/badge.svg)](https://github.com/LCTXTECH/atsp/actions/workflows/ci.yml)
 ---
 
 ## Key Concepts
