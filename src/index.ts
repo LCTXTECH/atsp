@@ -1,15 +1,9 @@
 /**
  * @agentsentry/atsp
  * Agentic Transaction Security Protocol v1.0
- *
- * The open standard for AI agent on-chain governance.
  * https://agentsentry.net/protocol/atsp
- *
- * @example
- * import { createIntentDeclaration, validateDeclaration } from '@agentsentry/atsp'
  */
 
-// Re-export all types
 export type {
   ATSPVersion,
   ATSPAction,
@@ -23,24 +17,16 @@ export type {
 
 export { ATSP_VERSION } from './types'
 
-// Re-export validation functions
 export {
   validateDeclaration,
+  verifyIntentHash,
   isExpired,
-  computeRiskScore,
+  riskLevel,
 } from './validate'
-
-// -------------------------------------------------------
-// createIntentDeclaration — the main developer-facing API
-// -------------------------------------------------------
 
 import type { ATSPIntentDeclaration, ATSPAction, ATSPDecisionTrace } from './types'
 import { ATSP_VERSION } from './types'
 
-/**
- * Input for createIntentDeclaration — everything the developer provides.
- * The function computes intentHash and timestamp automatically.
- */
 export interface CreateIntentInput {
   agentId: string
   proposerPubKey: string
@@ -49,41 +35,18 @@ export interface CreateIntentInput {
   tokenMint: string
   slippage?: number
   reasoning: string
-  decisionTrace: Omit & { ipiCleared: boolean }
+  decisionTrace: ATSPDecisionTrace
 }
 
 /**
  * Creates a fully-formed ATSPIntentDeclaration ready for middleware submission.
- *
- * Computes the intentHash automatically using the Web Crypto API (browser/Edge)
- * or Node.js crypto (server). Works in both environments.
- *
- * @param input - The intent details from the AI agent
- * @returns A complete ATSPIntentDeclaration with intentHash and timestamp set
- *
- * @example
- * const declaration = await createIntentDeclaration({
- *   agentId: 'eliza-agent-001',
- *   proposerPubKey: 'YOUR_PROPOSER_KEY',
- *   action: 'SWAP',
- *   amount: 10.5,
- *   tokenMint: 'So11111111111111111111111111111111111111112',
- *   slippage: 1.5,
- *   reasoning: 'Rebalancing: SOL/USDC exceeded 60% threshold',
- *   decisionTrace: {
- *     input: { price: 145.2, ratio: 0.63 },
- *     reasoning: '1. Check ratio. 2. Threshold exceeded. 3. Propose rebalance.',
- *     confidence: 0.87,
- *     ipiCleared: true,
- *   },
- * })
+ * Computes intentHash automatically using SHA-256.
+ * Works in Node.js, browser, Vercel Edge, and Cloudflare Workers.
  */
 export async function createIntentDeclaration(
   input: CreateIntentInput
-): Promise {
+): Promise<ATSPIntentDeclaration> {
   const timestamp = Date.now()
-
-  // Compute intentHash: SHA-256 of the immutable fields
   const hashInput = `${input.agentId}:${input.action}:${input.amount}:${input.tokenMint}:${timestamp}`
   const intentHash = await sha256(hashInput)
 
@@ -102,22 +65,18 @@ export async function createIntentDeclaration(
   }
 }
 
-/**
- * Cross-environment SHA-256.
- * Uses SubtleCrypto in browser/Edge, Node crypto in server.
- */
-async function sha256(message: string): Promise {
+async function sha256(message: string): Promise<string> {
   const encoded = new TextEncoder().encode(message)
-
-  // Browser / Edge runtime (Vercel Edge Functions, Cloudflare Workers)
-  if (typeof globalThis.crypto?.subtle !== 'undefined') {
-    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', encoded)
-    return Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
+  if (
+    typeof globalThis !== 'undefined' &&
+    globalThis.crypto &&
+    globalThis.crypto.subtle
+  ) {
+    const buf = await globalThis.crypto.subtle.digest('SHA-256', encoded)
+    return Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, '0'))
       .join('')
   }
-
-  // Node.js runtime (API routes, scripts)
   const { createHash } = await import('crypto')
   return createHash('sha256').update(message).digest('hex')
 }
