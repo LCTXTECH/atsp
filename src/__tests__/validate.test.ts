@@ -1,23 +1,15 @@
-/**
- * ATSP v1.0 — Validation Test Suite
- * Tests for validateDeclaration() and verifyIntentHash()
- */
-
 import { validateDeclaration, verifyIntentHash, isExpired, riskLevel } from '../validate'
 import { createIntentDeclaration } from '../index'
 import type { ATSPIntentDeclaration } from '../types'
 
-// ─── Shared valid base declaration ───────────────────────────────────────────
-
-const VALID_AGENT_ID   = 'eliza-agent-001'
 const VALID_PROPOSER   = 'So11111111111111111111111111111111111111112'
-const VALID_TOKEN_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC
-const VALID_HASH       = 'a'.repeat(64) // 64-char hex placeholder
+const VALID_TOKEN_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+const VALID_HASH       = 'a'.repeat(64)
 
 function makeValid(overrides: Partial<ATSPIntentDeclaration> = {}): ATSPIntentDeclaration {
   return {
     version: '1.0',
-    agentId: VALID_AGENT_ID,
+    agentId: 'eliza-agent-001',
     proposerPubKey: VALID_PROPOSER,
     intentHash: VALID_HASH,
     timestamp: Date.now(),
@@ -35,8 +27,6 @@ function makeValid(overrides: Partial<ATSPIntentDeclaration> = {}): ATSPIntentDe
     ...overrides,
   }
 }
-
-// ─── validateDeclaration ─────────────────────────────────────────────────────
 
 describe('validateDeclaration', () => {
 
@@ -71,22 +61,22 @@ describe('validateDeclaration', () => {
   })
 
   test('expired declaration returns error', () => {
-    const result = validateDeclaration(
-      makeValid({ timestamp: Date.now() - 120_000 }) // 2 minutes ago
-    )
+    const result = validateDeclaration(makeValid({ timestamp: Date.now() - 120_000 }))
     expect(result.valid).toBe(false)
     expect(result.errors[0]).toMatch(/expired/)
   })
 
   test('SWAP without slippage returns error', () => {
-    const { slippage: _, ...rest } = makeValid()
+    const base = makeValid()
+    const { slippage: _removed, ...rest } = base
     const result = validateDeclaration(rest as ATSPIntentDeclaration)
     expect(result.valid).toBe(false)
     expect(result.errors[0]).toMatch(/slippage is required/)
   })
 
   test('TRANSFER without slippage is valid', () => {
-    const { slippage: _, ...rest } = makeValid({ action: 'TRANSFER' })
+    const base = makeValid({ action: 'TRANSFER' })
+    const { slippage: _removed, ...rest } = base
     const result = validateDeclaration(rest as ATSPIntentDeclaration)
     expect(result.valid).toBe(true)
   })
@@ -97,56 +87,46 @@ describe('validateDeclaration', () => {
     expect(result.errors[0]).toMatch(/exceeds ATSP safety maximum/)
   })
 
-  test('slippage > 10% adds warning and increases riskScore', () => {
-    // 15% is between 10-20% — warning only, not a blocking error
+  test('slippage between 10-20% is a warning not an error', () => {
     const result = validateDeclaration(makeValid({ slippage: 15 }))
     expect(result.valid).toBe(true)
-    expect(result.warnings.some(w => w.includes('high'))).toBe(true)
+    expect(result.warnings.some((w) => w.includes('high'))).toBe(true)
     expect(result.riskScore).toBeGreaterThan(0)
   })
-    const result = validateDeclaration(
-      makeValid({ decisionTrace: { ...makeValid().decisionTrace, ipiCleared: false } })
-    )
-    expect(result.valid).toBe(true) // warning, not error
-    expect(result.warnings.some(w => w.includes('ipiCleared'))).toBe(true)
+
+  test('ipiCleared false adds warning and increases riskScore', () => {
+    const trace = { ...makeValid().decisionTrace, ipiCleared: false }
+    const result = validateDeclaration(makeValid({ decisionTrace: trace }))
+    expect(result.valid).toBe(true)
+    expect(result.warnings.some((w) => w.includes('ipiCleared'))).toBe(true)
     expect(result.riskScore).toBeGreaterThan(0)
   })
 
   test('low confidence adds warning', () => {
-    const result = validateDeclaration(
-      makeValid({ decisionTrace: { ...makeValid().decisionTrace, confidence: 0.3 } })
-    )
-    expect(result.warnings.some(w => w.includes('confidence'))).toBe(true)
+    const trace = { ...makeValid().decisionTrace, confidence: 0.3 }
+    const result = validateDeclaration(makeValid({ decisionTrace: trace }))
+    expect(result.warnings.some((w) => w.includes('confidence'))).toBe(true)
   })
 
   test('missing decisionTrace returns error', () => {
-    const result = validateDeclaration(
-      makeValid({ decisionTrace: undefined as never })
-    )
+    const result = validateDeclaration(makeValid({ decisionTrace: undefined as never }))
     expect(result.valid).toBe(false)
     expect(result.errors[0]).toMatch(/decisionTrace/)
   })
 
   test('riskScore is capped at 1.0', () => {
-    const result = validateDeclaration(
-      makeValid({
-        amount: 999_999,
-        slippage: 12,
-        decisionTrace: { ...makeValid().decisionTrace, ipiCleared: false, confidence: 0.2 },
-      })
-    )
+    const trace = { ...makeValid().decisionTrace, ipiCleared: false, confidence: 0.2 }
+    const result = validateDeclaration(makeValid({ amount: 999_999, slippage: 15, decisionTrace: trace }))
     expect(result.riskScore).toBeLessThanOrEqual(1.0)
   })
 
 })
 
-// ─── verifyIntentHash ────────────────────────────────────────────────────────
-
 describe('verifyIntentHash', () => {
 
   test('valid declaration verifies correctly', async () => {
     const declaration = await createIntentDeclaration({
-      agentId: VALID_AGENT_ID,
+      agentId: 'eliza-agent-001',
       proposerPubKey: VALID_PROPOSER,
       action: 'SWAP',
       amount: 10.5,
@@ -155,40 +135,35 @@ describe('verifyIntentHash', () => {
       reasoning: 'Test reasoning for hash verification',
       decisionTrace: {
         input: { test: true },
-        reasoning: 'Test trace reasoning here',
+        reasoning: 'Test trace reasoning here for the test suite',
         confidence: 0.9,
         ipiCleared: true,
       },
     })
-    const valid = await verifyIntentHash(declaration)
-    expect(valid).toBe(true)
+    expect(await verifyIntentHash(declaration)).toBe(true)
   })
 
   test('tampered amount fails hash verification', async () => {
     const declaration = await createIntentDeclaration({
-      agentId: VALID_AGENT_ID,
+      agentId: 'eliza-agent-001',
       proposerPubKey: VALID_PROPOSER,
       action: 'SWAP',
       amount: 10.5,
       tokenMint: VALID_TOKEN_MINT,
       slippage: 1.5,
-      reasoning: 'Test reasoning for tampering test',
+      reasoning: 'Test reasoning for tampering detection test',
       decisionTrace: {
         input: {},
-        reasoning: 'Trace for tamper test',
+        reasoning: 'Trace for tamper detection test suite',
         confidence: 0.9,
         ipiCleared: true,
       },
     })
-    // Tamper with amount after hash was computed
     const tampered = { ...declaration, amount: 999999 }
-    const valid = await verifyIntentHash(tampered)
-    expect(valid).toBe(false)
+    expect(await verifyIntentHash(tampered)).toBe(false)
   })
 
 })
-
-// ─── isExpired ───────────────────────────────────────────────────────────────
 
 describe('isExpired', () => {
   test('fresh declaration is not expired', () => {
@@ -202,11 +177,9 @@ describe('isExpired', () => {
   })
 })
 
-// ─── riskLevel ───────────────────────────────────────────────────────────────
-
 describe('riskLevel', () => {
-  test('0.0 = LOW', ()  => expect(riskLevel(0.0)).toBe('LOW'))
-  test('0.3 = MEDIUM',  () => expect(riskLevel(0.3)).toBe('MEDIUM'))
-  test('0.6 = HIGH',    () => expect(riskLevel(0.6)).toBe('HIGH'))
-  test('0.9 = CRITICAL',() => expect(riskLevel(0.9)).toBe('CRITICAL'))
+  test('0.0 = LOW',      () => expect(riskLevel(0.0)).toBe('LOW'))
+  test('0.3 = MEDIUM',   () => expect(riskLevel(0.3)).toBe('MEDIUM'))
+  test('0.6 = HIGH',     () => expect(riskLevel(0.6)).toBe('HIGH'))
+  test('0.9 = CRITICAL', () => expect(riskLevel(0.9)).toBe('CRITICAL'))
 })
