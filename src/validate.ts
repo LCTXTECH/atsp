@@ -181,6 +181,8 @@ export function validateDeclaration(
  */
 export async function verifyIntentHash(
   declaration: ATSPIntentDeclaration
+export async function verifyIntentHash(
+  declaration: ATSPIntentDeclaration,
 ): Promise {
   if (!declaration.intentHash) return false
   const hashInput = `${declaration.agentId}:${declaration.action}:${declaration.amount}:${declaration.tokenMint}:${declaration.timestamp}`
@@ -215,7 +217,7 @@ export function riskLevel(score: number): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
 /**
  * Cross-environment SHA-256.
  * Works in Node.js, browser, Vercel Edge, Cloudflare Workers.
- * @internal — used by verifyIntentHash
+ async function sha256(message: string): Promise {
  */
 async function sha256(message: string): Promise {
   const encoded = new TextEncoder().encode(message)
