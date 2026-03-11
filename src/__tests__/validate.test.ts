@@ -14,7 +14,7 @@ const VALID_PROPOSER   = 'So11111111111111111111111111111111111111112'
 const VALID_TOKEN_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' // USDC
 const VALID_HASH       = 'a'.repeat(64) // 64-char hex placeholder
 
-function makeValid(overrides: Partial = {}): ATSPIntentDeclaration {
+function makeValid(overrides: Partial<ATSPIntentDeclaration> = {}): ATSPIntentDeclaration {
   return {
     version: '1.0',
     agentId: VALID_AGENT_ID,
