@@ -98,15 +98,12 @@ describe('validateDeclaration', () => {
   })
 
   test('slippage > 10% adds warning and increases riskScore', () => {
+    // 15% is between 10-20% — warning only, not a blocking error
     const result = validateDeclaration(makeValid({ slippage: 15 }))
-    expect(result.valid).toBe(false) // 15% triggers the >20 check...
-    // Adjust: 15% should be a warning, not an error
-    const borderline = validateDeclaration(makeValid({ slippage: 12 }))
-    expect(borderline.warnings.some(w => w.includes('high'))).toBe(true)
-    expect(borderline.riskScore).toBeGreaterThan(0)
+    expect(result.valid).toBe(true)
+    expect(result.warnings.some(w => w.includes('high'))).toBe(true)
+    expect(result.riskScore).toBeGreaterThan(0)
   })
-
-  test('ipiCleared false adds warning and increases riskScore', () => {
     const result = validateDeclaration(
       makeValid({ decisionTrace: { ...makeValid().decisionTrace, ipiCleared: false } })
     )
